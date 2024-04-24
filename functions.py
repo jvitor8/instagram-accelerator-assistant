@@ -42,12 +42,27 @@ def create_assistant(client):
         file = client.files.create(file=open("knowledge.pdf", "rb"), purpose='assistants')
 
         # Creating a new assistant with the specified instructions, model, and tools
-        assistant = client.beta.assistants.create(
-            instructions=assistant_instructions,
-            model="gpt-4-turbo",
-            tools=[{"type": "file_search"}],
-            tool_resources={"file_search": {"vector_store_ids": [file.id]}}
-        )
+      assistant = client.beta.assistants.create(
+          instructions=assistant_instructions,
+          model="gpt-4-turbo",
+          tools=[
+              {"type": "file_search"},
+              {"type": "function", "function": {
+                  "name": "send_to_webhook",
+                  "description": "Send user data along with a message to a webhook",
+                  "parameters": {
+                      "type": "object",
+                      "properties": {
+                          "name": {"type": "string", "description": "The user's name"},
+                          "email": {"type": "string", "description": "The user's email"},
+                          "message": {"type": "string", "description": "The message to send"}
+                      },
+                      "required": ["name", "email", "message"]
+                  }
+              }}
+          ],
+          tool_resources={"file_search": {"vector_store_ids": [file.id]}}
+      )
 
         # Save the new assistant ID in a JSON file for future use
         with open(assistant_file_path, 'w') as file:

@@ -17,7 +17,7 @@ OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
 client = openai.Client(api_key=OPENAI_API_KEY)
 
 # Load or create assistant ID
-from your_module import create_assistant  # Replace 'your_module' with the actual module name where 'create_assistant' is defined
+from functions import create_assistant  # Replace 'your_module' with the actual module name where 'create_assistant' is defined
 assistant_id = create_assistant(client)
 
 @app.route('/start', methods=['GET'])
