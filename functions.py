@@ -9,14 +9,17 @@ from prompts import assistant_instructions
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
 MAKE_COM_WEBHOOK_URL = os.environ['MAKE_COM_WEBHOOK_URL']
 
-# Initialize OpenAI Client
-client = OpenAI(api_key=OPENAI_API_KEY)
+# Initialize OpenAI Client with v2 API settings
+client = OpenAI(default_headers={"OpenAI-Beta": "assistants=v2"})
 
 # Send user data along with a message explaining the contact reason to a webhook on make.com
 def send_to_webhook(name, email, message):
     url = MAKE_COM_WEBHOOK_URL  # The webhook URL
     data = {"name": name, "email": email, "message": message}
-    response = requests.post(url, json=data)
+    headers = {
+        "Content-Type": "application/json"
+    }
+    response = requests.post(url, headers=headers, json=data)
     if response.status_code == 200:
         print("Data sent successfully to webhook.")
         return response.json()
@@ -36,16 +39,15 @@ def create_assistant(client):
     else:
         # Create a new assistant if no existing data is found
         # Uploading a document to associate with the assistant
-        file = client.files.create(file=open("knowledge.docx", "rb"),
-                                   purpose='assistants')
+        file = client.files.create(file=open("knowledge.pdf", "rb"), purpose='assistants')
 
         # Creating a new assistant with the specified instructions, model, and tools
-        assistant = client.assistants.create(
+        assistant = client.beta.assistants.create(
             instructions=assistant_instructions,
             model="gpt-4-turbo",
-            tools=[
-                {"type": "file_search", "file_ids": [knowledge.pdf]}  # Attaching the file to the assistant using file search tool
-            ])
+            tools=[{"type": "file_search"}],
+            tool_resources={"file_search": {"vector_store_ids": [file.id]}}
+        )
 
         # Save the new assistant ID in a JSON file for future use
         with open(assistant_file_path, 'w') as file:
